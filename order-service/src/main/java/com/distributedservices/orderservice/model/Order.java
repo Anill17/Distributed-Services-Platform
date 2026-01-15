@@ -1,6 +1,10 @@
 package com.distributedservices.orderservice.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
@@ -11,6 +15,10 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "orders")
 @Document(indexName = "orders")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Order {
 
     @Id
@@ -43,82 +51,6 @@ public class Order {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
-    // Constructors
-    public Order() {
-    }
-
-    public Order(Long userId, String orderNumber, BigDecimal totalAmount, OrderStatus status) {
-        this.userId = userId;
-        this.orderNumber = orderNumber;
-        this.totalAmount = totalAmount;
-        this.status = status;
-    }
-
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public String getOrderNumber() {
-        return orderNumber;
-    }
-
-    public void setOrderNumber(String orderNumber) {
-        this.orderNumber = orderNumber;
-    }
-
-    public BigDecimal getTotalAmount() {
-        return totalAmount;
-    }
-
-    public void setTotalAmount(BigDecimal totalAmount) {
-        this.totalAmount = totalAmount;
-    }
-
-    public OrderStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(OrderStatus status) {
-        this.status = status;
-    }
-
-    public String getShippingAddress() {
-        return shippingAddress;
-    }
-
-    public void setShippingAddress(String shippingAddress) {
-        this.shippingAddress = shippingAddress;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
 
     // Enum for Order Status
     public enum OrderStatus {

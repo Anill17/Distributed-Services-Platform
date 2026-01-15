@@ -4,9 +4,15 @@ import com.distributedservices.orderservice.model.Order;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class OrderRequest {
 
     @NotNull(message = "User ID is required")
@@ -23,57 +29,4 @@ public class OrderRequest {
     private Order.OrderStatus status;
 
     private String shippingAddress;
-
-    // Constructors
-    public OrderRequest() {
-    }
-
-    public OrderRequest(Long userId, String orderNumber, BigDecimal totalAmount, Order.OrderStatus status, String shippingAddress) {
-        this.userId = userId;
-        this.orderNumber = orderNumber;
-        this.totalAmount = totalAmount;
-        this.status = status;
-        this.shippingAddress = shippingAddress;
-    }
-
-    // Getters and Setters
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public String getOrderNumber() {
-        return orderNumber;
-    }
-
-    public void setOrderNumber(String orderNumber) {
-        this.orderNumber = orderNumber;
-    }
-
-    public BigDecimal getTotalAmount() {
-        return totalAmount;
-    }
-
-    public void setTotalAmount(BigDecimal totalAmount) {
-        this.totalAmount = totalAmount;
-    }
-
-    public Order.OrderStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(Order.OrderStatus status) {
-        this.status = status;
-    }
-
-    public String getShippingAddress() {
-        return shippingAddress;
-    }
-
-    public void setShippingAddress(String shippingAddress) {
-        this.shippingAddress = shippingAddress;
-    }
 }
