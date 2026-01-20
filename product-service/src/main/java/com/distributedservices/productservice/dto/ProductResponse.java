@@ -1,5 +1,6 @@
 package com.distributedservices.productservice.dto;
 
+import com.distributedservices.productservice.model.Product;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,4 +22,18 @@ public class ProductResponse {
     private String sku;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    public static ProductResponse fromProduct(Product product) {
+        return new ProductResponse(
+                product.getId(),
+                product.getName(),
+                product.getDescription(),
+                product.getPrice(),
+                product.getQuantity(),
+                product.getCategory(),
+                product.getSku(),
+                product.getCreatedAt(),
+                product.getUpdatedAt()
+        );
+    }
 }

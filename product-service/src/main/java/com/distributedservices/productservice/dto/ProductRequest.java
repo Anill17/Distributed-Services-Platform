@@ -1,5 +1,6 @@
 package com.distributedservices.productservice.dto;
 
+import com.distributedservices.productservice.model.Product;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -9,6 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -32,4 +34,17 @@ public class ProductRequest {
 
     @NotBlank(message = "SKU is required")
     private String sku;
+
+    public Product toProduct() {
+        Product product = new Product();
+        product.setName(this.name);
+        product.setDescription(this.description);
+        product.setPrice(this.price);
+        product.setQuantity(this.quantity);
+        product.setCategory(this.category);
+        product.setSku(this.sku);
+        product.setCreatedAt(LocalDateTime.now());
+        product.setUpdatedAt(LocalDateTime.now());
+        return product;
+    }
 }
