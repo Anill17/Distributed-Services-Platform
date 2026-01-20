@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -116,8 +117,10 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "products", key = "#id")
-    @CacheEvict(value = "productsList", allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "products", key = "#id"),
+            @CacheEvict(value = "productsList", allEntries = true)
+    })
     public void deleteProduct(Long id) {
         // TODO: Implement delete product logic
     }
