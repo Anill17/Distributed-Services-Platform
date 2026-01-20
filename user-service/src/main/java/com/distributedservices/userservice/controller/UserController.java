@@ -75,6 +75,13 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<UserResponse>> searchUsers(@RequestParam String q) {
+        log.info("GET /api/users/search?q={} - Searching users", q);
+        List<UserResponse> users = userService.searchUsers(q);
+        return ResponseEntity.ok(users);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(@PathVariable Long id,
                                                    @Valid @RequestBody UserRequest userRequest) {

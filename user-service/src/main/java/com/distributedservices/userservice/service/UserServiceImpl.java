@@ -158,6 +158,38 @@ public class UserServiceImpl implements UserService{
         .collect(Collectors.toList());
        
     }
+
+    @Override
+    public List<UserResponse> searchUsers(String query) {
+        log.debug("Searching users with query: {}", query);
+        try {
+            List<User> users = elasticsearchRepository.findByUsernameContaining(query);
+            users.addAll(elasticsearchRepository.findByEmailContaining(query));
+            users.addAll(elasticsearchRepository.findByFirstNameContainingOrLastNameContaining(query, query));
+            
+            List<User> uniqueUsers = users.stream()
+                    .distinct()
+                    .collect(Collectors.toList());
+            
+            return uniqueUsers.stream()
+                    .map(this::mapToResponse)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.warn("Elasticsearch search failed, falling back to database search: {}", e.getMessage());
+            List<User> users = userRepository.findByUsernameContaining(query);
+            users.addAll(userRepository.findByEmailContaining(query));
+            users.addAll(userRepository.findByFirstNameContainingOrLastNameContaining(query, query));
+            
+            List<User> uniqueUsers = users.stream()
+                    .distinct()
+                    .collect(Collectors.toList());
+            
+            return uniqueUsers.stream()
+                    .map(this::mapToResponse)
+                    .collect(Collectors.toList());
+        }
+    }
+
     @Override
     @Transactional
     public UserResponse updateUser(Long id, UserRequest userRequest) {
