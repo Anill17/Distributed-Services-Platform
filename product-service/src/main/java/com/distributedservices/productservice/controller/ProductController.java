@@ -23,37 +23,22 @@ public class ProductController {
     @PostMapping
     public ResponseEntity<ProductResponse> createProduct(@Valid @RequestBody ProductRequest productRequest) {
         log.info("POST /api/products - Creating product: {}", productRequest.getName());
-        try {
-            ProductResponse productResponse = productService.createProduct(productRequest);
-            return ResponseEntity.status(HttpStatus.CREATED).body(productResponse);
-        } catch (IllegalArgumentException e) {
-            log.warn("Validation error creating product: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
+        ProductResponse productResponse = productService.createProduct(productRequest);
+        return ResponseEntity.status(HttpStatus.CREATED).body(productResponse);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponse> getProductById(@PathVariable Long id) {
         log.info("GET /api/products/{}", id);
-        try {
-            ProductResponse productResponse = productService.getProductById(id);
-            return ResponseEntity.ok(productResponse);
-        } catch (RuntimeException e) {
-            log.debug("Product not found: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        ProductResponse productResponse = productService.getProductById(id);
+        return ResponseEntity.ok(productResponse);
     }
 
     @GetMapping("/sku/{sku}")
     public ResponseEntity<ProductResponse> getProductBySku(@PathVariable String sku) {
         log.info("GET /api/products/sku/{}", sku);
-        try {
-            ProductResponse productResponse = productService.getProductBySku(sku);
-            return ResponseEntity.ok(productResponse);
-        } catch (RuntimeException e) {
-            log.debug("Product not found: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        ProductResponse productResponse = productService.getProductBySku(sku);
+        return ResponseEntity.ok(productResponse);
     }
 
     @GetMapping
@@ -88,40 +73,22 @@ public class ProductController {
     public ResponseEntity<ProductResponse> updateProduct(@PathVariable Long id,
                                                          @Valid @RequestBody ProductRequest productRequest) {
         log.info("PUT /api/products/{} - Updating product", id);
-        try {
-            ProductResponse productResponse = productService.updateProduct(id, productRequest);
-            return ResponseEntity.ok(productResponse);
-        } catch (IllegalArgumentException e) {
-            log.warn("Validation error updating product: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        } catch (RuntimeException e) {
-            log.debug("Product not found for update: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        ProductResponse productResponse = productService.updateProduct(id, productRequest);
+        return ResponseEntity.ok(productResponse);
     }
 
     @PatchMapping("/{id}/quantity")
     public ResponseEntity<ProductResponse> updateProductQuantity(@PathVariable Long id,
                                                                 @RequestParam Integer quantity) {
         log.info("PATCH /api/products/{}/quantity - Updating quantity to {}", id, quantity);
-        try {
-            ProductResponse productResponse = productService.updateProductQuantity(id, quantity);
-            return ResponseEntity.ok(productResponse);
-        } catch (RuntimeException e) {
-            log.debug("Product not found for quantity update: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        ProductResponse productResponse = productService.updateProductQuantity(id, quantity);
+        return ResponseEntity.ok(productResponse);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         log.info("DELETE /api/products/{} - Deleting product", id);
-        try {
-            productService.deleteProduct(id);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            log.debug("Product not found for deletion: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        productService.deleteProduct(id);
+        return ResponseEntity.noContent().build();
     }
 }

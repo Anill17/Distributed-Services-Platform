@@ -19,4 +19,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findByQuantityGreaterThan(Integer quantity);
     
     boolean existsBySku(String sku);
+    
+    List<Product> findByDescriptionContaining(String description);
 }
