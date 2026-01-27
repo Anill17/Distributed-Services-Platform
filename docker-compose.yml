@@ -9,6 +9,15 @@ services:
     volumes:
       - redis_data:/data
 
+  redis-insight:
+    image: redis/redisinsight:latest
+    ports:
+      - "5540:5540"
+    volumes:
+      - redis_insight_data:/data
+    depends_on:
+      - redis
+
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     environment:
@@ -18,7 +27,7 @@ services:
       - "2181:2181"
 
   kafka:
-    image: confluentinc/cp-kafka:latest
+    image: confluentinc/cp-kafka:7.5.0
     depends_on:
       - zookeeper
     ports:
@@ -29,6 +38,7 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_PROCESS_ROLES: ""
     volumes:
       - kafka_data:/var/lib/kafka/data
 
@@ -46,5 +56,6 @@ services:
 
 volumes:
   redis_data:
+  redis_insight_data:
   kafka_data:
   es_data:

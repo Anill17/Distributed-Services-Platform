@@ -2,6 +2,7 @@ package com.distributedservices.productservice.service;
 
 import com.distributedservices.productservice.repository.ProductRepository;
 import com.distributedservices.productservice.repository.ProductElasticsearchRepository;
+import com.distributedservices.productservice.dto.PagedProductResponse;
 import com.distributedservices.productservice.dto.ProductRequest;
 import com.distributedservices.productservice.dto.ProductResponse;
 import com.distributedservices.productservice.model.Product;
@@ -13,6 +14,9 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,7 +61,6 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    @Cacheable(value = "products", key = "#id")
     public ProductResponse getProductById(Long id) {
         log.debug("Getting product by id: {}", id);
         Product product = productRepository.findById(id)
@@ -75,13 +78,25 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    @Cacheable(value = "productsList", key = "'all'")
-    public List<ProductResponse> getAllProducts() {
-        log.debug("Getting all products");
-        List<Product> products = productRepository.findAll();
-        return products.stream()
+    public PagedProductResponse getAllProducts(Pageable pageable) {
+        log.debug("Getting all products with pagination - page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
+        
+        // Ensure page size is 10
+        Pageable pageRequest = PageRequest.of(pageable.getPageNumber(), 10, pageable.getSort());
+        
+        Page<Product> productPage = productRepository.findAll(pageRequest);
+        
+        List<ProductResponse> productResponses = productPage.getContent().stream()
                 .map(ProductResponse::fromProduct)
                 .collect(Collectors.toList());
+        
+        return PagedProductResponse.builder()
+                .products(productResponses)
+                .totalElements(productPage.getTotalElements())
+                .totalPages(productPage.getTotalPages())
+                .currentPage(productPage.getNumber())
+                .pageSize(productPage.getSize())
+                .build();
     }
 
     @Override
@@ -141,6 +156,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     @CachePut(value = "products", key = "#id")
     @CacheEvict(value = "productsList", allEntries = true)
+    // sık değişen objeler cache olmamalı
     public ProductResponse updateProduct(Long id, ProductRequest productRequest) {
         log.info("Updating product by id: {}", id);
         

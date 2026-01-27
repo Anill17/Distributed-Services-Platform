@@ -1,11 +1,15 @@
 package com.distributedservices.productservice.controller;
 
+import com.distributedservices.productservice.dto.PagedProductResponse;
 import com.distributedservices.productservice.dto.ProductRequest;
 import com.distributedservices.productservice.dto.ProductResponse;
 import com.distributedservices.productservice.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -42,10 +46,21 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductResponse>> getAllProducts() {
-        log.info("GET /api/products - Fetching all products");
-        List<ProductResponse> products = productService.getAllProducts();
-        return ResponseEntity.ok(products);
+    public ResponseEntity<PagedProductResponse> getAllProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDir) {
+        log.info("GET /api/products - Fetching all products - page: {}, size: {}, sortBy: {}, sortDir: {}", 
+                page, size, sortBy, sortDir);
+        
+        Sort sort = sortDir.equalsIgnoreCase("DESC") 
+                ? Sort.by(sortBy).descending() 
+                : Sort.by(sortBy).ascending();
+        
+        Pageable pageable = PageRequest.of(page, size, sort);
+        PagedProductResponse response = productService.getAllProducts(pageable);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/category/{category}")
