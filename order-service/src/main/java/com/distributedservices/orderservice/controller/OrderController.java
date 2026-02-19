@@ -24,37 +24,22 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody OrderRequest orderRequest) {
         log.info("POST /api/orders - Creating order for user: {}", orderRequest.getUserId());
-        try {
-            OrderResponse orderResponse = orderService.createOrder(orderRequest);
-            return ResponseEntity.status(HttpStatus.CREATED).body(orderResponse);
-        } catch (IllegalArgumentException e) {
-            log.warn("Validation error creating order: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
+        OrderResponse orderResponse = orderService.createOrder(orderRequest);
+        return ResponseEntity.status(HttpStatus.CREATED).body(orderResponse);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<OrderResponse> getOrderById(@PathVariable Long id) {
         log.info("GET /api/orders/{}", id);
-        try {
-            OrderResponse orderResponse = orderService.getOrderById(id);
-            return ResponseEntity.ok(orderResponse);
-        } catch (RuntimeException e) {
-            log.debug("Order not found: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        OrderResponse orderResponse = orderService.getOrderById(id);
+        return ResponseEntity.ok(orderResponse);
     }
 
     @GetMapping("/order-number/{orderNumber}")
     public ResponseEntity<OrderResponse> getOrderByOrderNumber(@PathVariable String orderNumber) {
         log.info("GET /api/orders/order-number/{}", orderNumber);
-        try {
-            OrderResponse orderResponse = orderService.getOrderByOrderNumber(orderNumber);
-            return ResponseEntity.ok(orderResponse);
-        } catch (RuntimeException e) {
-            log.debug("Order not found: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        OrderResponse orderResponse = orderService.getOrderByOrderNumber(orderNumber);
+        return ResponseEntity.ok(orderResponse);
     }
 
     @GetMapping("/user/{userId}")
@@ -82,40 +67,22 @@ public class OrderController {
     public ResponseEntity<OrderResponse> updateOrder(@PathVariable Long id,
                                                      @Valid @RequestBody OrderRequest orderRequest) {
         log.info("PUT /api/orders/{} - Updating order", id);
-        try {
-            OrderResponse orderResponse = orderService.updateOrder(id, orderRequest);
-            return ResponseEntity.ok(orderResponse);
-        } catch (IllegalArgumentException e) {
-            log.warn("Validation error updating order: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        } catch (RuntimeException e) {
-            log.debug("Order not found for update: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        OrderResponse orderResponse = orderService.updateOrder(id, orderRequest);
+        return ResponseEntity.ok(orderResponse);
     }
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<OrderResponse> updateOrderStatus(@PathVariable Long id,
                                                           @RequestBody Order.OrderStatus status) {
         log.info("PATCH /api/orders/{}/status - Updating order status to {}", id, status);
-        try {
-            OrderResponse orderResponse = orderService.updateOrderStatus(id, status);
-            return ResponseEntity.ok(orderResponse);
-        } catch (RuntimeException e) {
-            log.debug("Order not found for status update: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        OrderResponse orderResponse = orderService.updateOrderStatus(id, status);
+        return ResponseEntity.ok(orderResponse);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteOrder(@PathVariable Long id) {
         log.info("DELETE /api/orders/{} - Deleting order", id);
-        try {
-            orderService.deleteOrder(id);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            log.debug("Order not found for deletion: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        orderService.deleteOrder(id);
+        return ResponseEntity.noContent().build();
     }
 }

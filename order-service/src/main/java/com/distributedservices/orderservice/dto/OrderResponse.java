@@ -21,4 +21,17 @@ public class OrderResponse {
     private String shippingAddress;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    public static OrderResponse fromOrder(Order order) {
+        return new OrderResponse(
+                order.getId(),
+                order.getUserId(),
+                order.getOrderNumber(),
+                order.getTotalAmount(),
+                order.getStatus(),
+                order.getShippingAddress(),
+                order.getCreatedAt(),
+                order.getUpdatedAt()
+        );
+    }
 }

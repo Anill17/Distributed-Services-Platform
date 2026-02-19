@@ -28,4 +28,10 @@ public interface ProductService {
     ProductResponse updateProductQuantity(Long id, Integer quantity);
 
     void deleteProduct(Long id);
+
+    /**
+     * Adjust product stock by delta (positive = add, negative = deduct).
+     * Used by order-event consumers for inventory updates.
+     */
+    void adjustQuantity(Long productId, int delta);
 }
