@@ -3,6 +3,7 @@ package com.distributedservices.userservice.controller;
 import com.distributedservices.userservice.dto.UserRequest;
 import com.distributedservices.userservice.dto.UserResponse;
 import com.distributedservices.userservice.service.UserService;
+import com.distributedservices.userservice.webtest.UserServiceWebTestApplication;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(UserController.class)
+@org.springframework.test.context.ContextConfiguration(classes = UserServiceWebTestApplication.class)
 class UserControllerTest {
 
     @Autowired
