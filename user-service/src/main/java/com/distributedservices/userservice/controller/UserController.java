@@ -21,14 +21,14 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping
-    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserRequest userRequest) {
+    public ResponseEntity<?> createUser(@Valid @RequestBody UserRequest userRequest) {
         log.info("POST /api/users - Creating user: {}", userRequest.getUsername());
         try {
             UserResponse userResponse = userService.createUser(userRequest);
             return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
         } catch (IllegalArgumentException e) {
             log.warn("Validation error creating user: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(java.util.Map.of("error", e.getMessage()));
         }
     }
 
@@ -83,15 +83,15 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponse> updateUser(@PathVariable Long id,
-                                                   @Valid @RequestBody UserRequest userRequest) {
+    public ResponseEntity<?> updateUser(@PathVariable Long id,
+                                        @Valid @RequestBody UserRequest userRequest) {
         log.info("PUT /api/users/{} - Updating user", id);
         try {
             UserResponse userResponse = userService.updateUser(id, userRequest);
             return ResponseEntity.ok(userResponse);
         } catch (IllegalArgumentException e) {
             log.warn("Validation error updating user: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(java.util.Map.of("error", e.getMessage()));
         } catch (RuntimeException e) {
             log.debug("User not found for update: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();

@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Distributed Services – API Client</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0f0f12;
+      --surface: #18181c;
+      --border: #2a2a30;
+      --text: #e4e4e7;
+      --text-muted: #71717a;
+      --accent: #22d3ee;
+      --accent-dim: #0891b2;
+      --success: #34d399;
+      --error: #f87171;
+      --radius: 8px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    .app {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: 100vh;
+    }
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 0;
+    }
+    .sidebar h1 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin: 0 1.25rem 1rem;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+    .nav-btn {
+      display: block;
+      width: 100%;
+      padding: 0.6rem 1.25rem;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: color 0.15s, background 0.15s;
+    }
+    .nav-btn:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+    .nav-btn.active { color: var(--accent); background: rgba(34,211,238,0.08); }
+    .config {
+      margin: 1rem 1.25rem 0;
+      padding: 1rem;
+      background: rgba(0,0,0,0.2);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    .config label { font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem; }
+    .config input { width: 100%; padding: 0.4rem 0.5rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); font: 0.8rem 'JetBrains Mono', monospace; margin-bottom: 0.5rem; }
+    .main {
+      padding: 1.5rem 2rem;
+      overflow: auto;
+    }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .panel h2 { font-size: 1.25rem; margin: 0 0 1rem; color: var(--text); }
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .section h3 { font-size: 0.9rem; margin: 0 0 0.75rem; color: var(--text-muted); font-weight: 500; }
+    .section .hint { font-size: 0.8rem; color: var(--text-muted); margin: -0.5rem 0 0.5rem; }
+    .row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end; margin-bottom: 0.75rem; }
+    .row:last-child { margin-bottom: 0; }
+    input, select, button, textarea {
+      font: inherit;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      color: var(--text);
+    }
+    input::placeholder, textarea::placeholder { color: var(--text-muted); }
+    button {
+      cursor: pointer;
+      background: var(--accent-dim);
+      color: var(--bg);
+      border: none;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    button:hover { background: var(--accent); }
+    button.secondary { background: var(--border); color: var(--text); }
+    button.danger { background: #b91c1c; color: #fff; }
+    .response-box {
+      margin-top: 1.25rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .response-header {
+      padding: 0.5rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .response-header .method { color: var(--accent); margin-right: 0.5rem; }
+    .response-header .status { margin-left: 0.75rem; }
+    .response-header .status.ok { color: var(--success); }
+    .response-header .status.err { color: var(--error); }
+    .out {
+      margin: 0;
+      padding: 1rem;
+      background: #0a0a0c;
+      font: 0.85rem 'JetBrains Mono', monospace;
+      white-space: pre-wrap;
+      word-break: break-all;
+      min-height: 120px;
+      max-height: 360px;
+      overflow: auto;
+    }
+    .out.placeholder { color: var(--text-muted); }
+    .out.success { border-top: none; }
+    .response-box.success .response-header .status { color: var(--success); }
+    .response-box.error .response-header .status { color: var(--error); }
+    .response-box.error .out { color: var(--error); }
+    .response-box.loading .out { color: var(--text-muted); }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } .app { grid-template-columns: 1fr; } }
+    label.inline { display: inline; margin-right: 0.5rem; }
+    #orderLineItems { margin-top: 0.5rem; }
+    .line-item { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center; }
+    .line-item input { width: 80px; }
+    .line-item button { padding: 0.35rem 0.6rem; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <h1>DISTRIBUTED SERVICES</h1>
+      <button type="button" class="nav-btn active" data-panel="users">Users</button>
+      <button type="button" class="nav-btn" data-panel="products">Products</button>
+      <button type="button" class="nav-btn" data-panel="orders">Orders</button>
+      <div class="config">
+        <label>User API (e.g. http://localhost:8081)</label>
+        <input type="text" id="baseUser" value="http://localhost:8081" />
+        <label>Product API (e.g. http://localhost:8083)</label>
+        <input type="text" id="baseProduct" value="http://localhost:8083" />
+        <label>Order API (e.g. http://localhost:8082)</label>
+        <input type="text" id="baseOrder" value="http://localhost:8082" />
+      </div>
+    </aside>
+    <main class="main">
+      <!-- USERS -->
+      <div id="panel-users" class="panel active">
+        <h2>Users API</h2>
+        <div class="grid2">
+          <div class="section">
+            <h3>List all</h3>
+            <div class="row"><button type="button" onclick="usersGetAll()">GET /api/users</button></div>
+          </div>
+          <div class="section">
+            <h3>Get by ID / username / email</h3>
+            <div class="row">
+              <input type="text" id="userById" placeholder="ID" style="width:80px" />
+              <button type="button" onclick="usersGetById()">By ID</button>
+            </div>
+            <div class="row">
+              <input type="text" id="userByUsername" placeholder="Username" style="width:140px" />
+              <button type="button" onclick="usersGetByUsername()">By username</button>
+            </div>
+            <div class="row">
+              <input type="text" id="userByEmail" placeholder="Email" style="width:200px" />
+              <button type="button" onclick="usersGetByEmail()">By email</button>
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <h3>Search & exists</h3>
+          <div class="row">
+            <input type="text" id="userSearchQ" placeholder="Search query (q)" style="width:200px" />
+            <button type="button" onclick="usersSearch()">GET /search?q=</button>
+          </div>
+          <div class="row">
+            <input type="text" id="userExistsUsername" placeholder="Username" style="width:140px" />
+            <button type="button" onclick="usersExistsUsername()">Exists username</button>
+            <input type="text" id="userExistsEmail" placeholder="Email" style="width:180px" />
+            <button type="button" onclick="usersExistsEmail()">Exists email</button>
+          </div>
+        </div>
+        <div class="section">
+          <h3>Create user</h3>
+          <p class="hint">Username 3–50 chars, valid email, password min 6 chars.</p>
+          <div class="row"><input type="text" id="userCreateUsername" placeholder="Username" /><input type="text" id="userCreateEmail" placeholder="Email" /></div>
+          <div class="row"><input type="password" id="userCreatePassword" placeholder="Password" /><input type="text" id="userCreateFirstName" placeholder="First name" /><input type="text" id="userCreateLastName" placeholder="Last name" /></div>
+          <div class="row"><button type="button" onclick="usersCreate()">POST /api/users</button></div>
+        </div>
+        <div class="section">
+          <h3>Update user</h3>
+          <div class="row"><input type="number" id="userUpdateId" placeholder="User ID" style="width:80px" /><input type="text" id="userUpdateUsername" placeholder="Username" /><input type="text" id="userUpdateEmail" placeholder="Email" /></div>
+          <div class="row"><input type="password" id="userUpdatePassword" placeholder="Password (optional)" /><input type="text" id="userUpdateFirstName" placeholder="First name" /><input type="text" id="userUpdateLastName" placeholder="Last name" /></div>
+          <div class="row"><button type="button" onclick="usersUpdate()">PUT /api/users/{id}</button></div>
+        </div>
+        <div class="section">
+          <h3>Delete user</h3>
+          <div class="row"><input type="number" id="userDeleteId" placeholder="User ID" style="width:80px" /><button type="button" class="danger" onclick="usersDelete()">DELETE</button></div>
+        </div>
+        <div class="response-box" id="response-box-users">
+          <div class="response-header" id="response-header-users">Response</div>
+          <div id="out-users" class="out placeholder">Response will appear here after you send a request.</div>
+        </div>
+      </div>
+
+      <!-- PRODUCTS -->
+      <div id="panel-products" class="panel">
+        <h2>Products API</h2>
+        <div class="grid2">
+          <div class="section">
+            <h3>List (paged)</h3>
+            <div class="row">
+              <input type="number" id="prodPage" placeholder="Page" value="0" style="width:60px" />
+              <input type="number" id="prodSize" placeholder="Size" value="10" style="width:60px" />
+              <input type="text" id="prodSortBy" placeholder="sortBy" value="id" style="width:80px" />
+              <select id="prodSortDir"><option value="ASC">ASC</option><option value="DESC">DESC</option></select>
+              <button type="button" onclick="productsGetAll()">GET /api/products</button>
+            </div>
+          </div>
+          <div class="section">
+            <h3>Get by ID / SKU</h3>
+            <div class="row"><input type="number" id="prodById" placeholder="ID" style="width:80px" /><button type="button" onclick="productsGetById()">By ID</button></div>
+            <div class="row"><input type="text" id="prodBySku" placeholder="SKU" style="width:120px" /><button type="button" onclick="productsGetBySku()">By SKU</button></div>
+          </div>
+        </div>
+        <div class="section">
+          <h3>Category, search, available</h3>
+          <div class="row">
+            <input type="text" id="prodCategory" placeholder="Category" style="width:120px" />
+            <button type="button" onclick="productsByCategory()">By category</button>
+            <input type="text" id="prodSearchQ" placeholder="Search q" style="width:140px" />
+            <button type="button" onclick="productsSearch()">Search</button>
+            <button type="button" onclick="productsAvailable()">Available</button>
+          </div>
+        </div>
+        <div class="section">
+          <h3>Create product</h3>
+          <div class="row"><input type="text" id="prodCreateName" placeholder="Name" /><input type="text" id="prodCreateSku" placeholder="SKU" /></div>
+          <div class="row"><input type="text" id="prodCreateDesc" placeholder="Description" /><input type="text" id="prodCreateCategory" placeholder="Category" /></div>
+          <div class="row"><input type="number" id="prodCreatePrice" placeholder="Price" step="0.01" style="width:100px" /><input type="number" id="prodCreateQty" placeholder="Quantity" value="0" style="width:80px" /></div>
+          <div class="row"><button type="button" onclick="productsCreate()">POST /api/products</button></div>
+        </div>
+        <div class="section">
+          <h3>Update product</h3>
+          <div class="row"><input type="number" id="prodUpdateId" placeholder="ID" style="width:60px" /><input type="text" id="prodUpdateName" placeholder="Name" /><input type="text" id="prodUpdateSku" placeholder="SKU" /></div>
+          <div class="row"><input type="text" id="prodUpdateDesc" placeholder="Description" /><input type="text" id="prodUpdateCategory" placeholder="Category" /><input type="number" id="prodUpdatePrice" placeholder="Price" step="0.01" style="width:90px" /><input type="number" id="prodUpdateQty" placeholder="Qty" style="width:60px" /></div>
+          <div class="row"><button type="button" onclick="productsUpdate()">PUT /api/products/{id}</button></div>
+        </div>
+        <div class="section">
+          <h3>Patch quantity & delete</h3>
+          <div class="row"><input type="number" id="prodPatchId" placeholder="ID" style="width:60px" /><input type="number" id="prodPatchQty" placeholder="Quantity" style="width:80px" /><button type="button" onclick="productsPatchQty()">PATCH quantity</button></div>
+          <div class="row"><input type="number" id="prodDeleteId" placeholder="ID" style="width:60px" /><button type="button" class="danger" onclick="productsDelete()">DELETE</button></div>
+        </div>
+        <div class="response-box" id="response-box-products">
+          <div class="response-header" id="response-header-products">Response</div>
+          <div id="out-products" class="out placeholder">Response will appear here after you send a request.</div>
+        </div>
+      </div>
+
+      <!-- ORDERS -->
+      <div id="panel-orders" class="panel">
+        <h2>Orders API</h2>
+        <div class="grid2">
+          <div class="section">
+            <h3>List all / by user / by status</h3>
+            <div class="row"><button type="button" onclick="ordersGetAll()">GET /api/orders</button></div>
+            <div class="row"><input type="number" id="orderUserId" placeholder="User ID" style="width:80px" /><button type="button" onclick="ordersGetByUser()">By user</button></div>
+            <div class="row">
+              <select id="orderStatus"><option value="PENDING">PENDING</option><option value="PROCESSING">PROCESSING</option><option value="SHIPPED">SHIPPED</option><option value="DELIVERED">DELIVERED</option><option value="CANCELLED">CANCELLED</option></select>
+              <button type="button" onclick="ordersGetByStatus()">By status</button>
+            </div>
+          </div>
+          <div class="section">
+            <h3>Get by ID / order number</h3>
+            <div class="row"><input type="number" id="orderById" placeholder="ID" style="width:80px" /><button type="button" onclick="ordersGetById()">By ID</button></div>
+            <div class="row"><input type="text" id="orderByNumber" placeholder="Order number" style="width:160px" /><button type="button" onclick="ordersGetByNumber()">By order number</button></div>
+          </div>
+        </div>
+        <div class="section">
+          <h3>Create order</h3>
+          <div class="row"><input type="number" id="orderCreateUserId" placeholder="User ID" style="width:80px" /><input type="text" id="orderCreateNumber" placeholder="Order number" /><input type="number" id="orderCreateTotal" placeholder="Total amount" step="0.01" style="width:100px" /></div>
+          <div class="row">
+            <select id="orderCreateStatus"><option value="PENDING">PENDING</option><option value="PROCESSING">PROCESSING</option><option value="SHIPPED">SHIPPED</option><option value="DELIVERED">DELIVERED</option><option value="CANCELLED">CANCELLED</option></select>
+            <input type="text" id="orderCreateAddress" placeholder="Shipping address" style="flex:1" />
+          </div>
+          <div class="row"><strong>Line items (productId, quantity)</strong></div>
+          <div id="orderLineItems"></div>
+          <div class="row"><button type="button" class="secondary" onclick="addOrderLineItem()">+ Add line item</button></div>
+          <div class="row"><button type="button" onclick="ordersCreate()">POST /api/orders</button></div>
+        </div>
+        <div class="section">
+          <h3>Update order</h3>
+          <div class="row"><input type="number" id="orderUpdateId" placeholder="Order ID" style="width:80px" /><input type="number" id="orderUpdateUserId" placeholder="User ID" style="width:70px" /><input type="text" id="orderUpdateNumber" placeholder="Order number" /><input type="number" id="orderUpdateTotal" placeholder="Total" step="0.01" style="width:90px" /></div>
+          <div class="row"><select id="orderUpdateStatus"><option value="PENDING">PENDING</option><option value="PROCESSING">PROCESSING</option><option value="SHIPPED">SHIPPED</option><option value="DELIVERED">DELIVERED</option><option value="CANCELLED">CANCELLED</option></select><input type="text" id="orderUpdateAddress" placeholder="Shipping address" style="flex:1" /></div>
+          <div class="row"><button type="button" onclick="ordersUpdate()">PUT /api/orders/{id}</button></div>
+        </div>
+        <div class="section">
+          <h3>Patch status & delete</h3>
+          <div class="row"><input type="number" id="orderPatchId" placeholder="Order ID" style="width:80px" /><select id="orderPatchStatus"><option value="PENDING">PENDING</option><option value="PROCESSING">PROCESSING</option><option value="SHIPPED">SHIPPED</option><option value="DELIVERED">DELIVERED</option><option value="CANCELLED">CANCELLED</option></select><button type="button" onclick="ordersPatchStatus()">PATCH status</button></div>
+          <div class="row"><input type="number" id="orderDeleteId" placeholder="Order ID" style="width:80px" /><button type="button" class="danger" onclick="ordersDelete()">DELETE</button></div>
+        </div>
+        <div class="response-box" id="response-box-orders">
+          <div class="response-header" id="response-header-orders">Response</div>
+          <div id="out-orders" class="out placeholder">Response will appear here after you send a request.</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const base = () => ({ user: $('baseUser').value.replace(/\/$/, ''), product: $('baseProduct').value.replace(/\/$/, ''), order: $('baseOrder').value.replace(/\/$/, '') });
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        $('panel-' + btn.dataset.panel).classList.add('active');
+      });
+    });
+
+    const STATUS_LABELS = { 200: 'OK', 201: 'Created', 204: 'No Content', 400: 'Bad Request', 404: 'Not Found', 500: 'Server Error' };
+    function setResponse(panel, method, url, status, bodyText, isError) {
+      const box = $('response-box-' + panel), header = $('response-header-' + panel), outEl = $('out-' + panel);
+      const statusLabel = (status !== undefined ? status + ' ' + (STATUS_LABELS[status] || '') : '').trim();
+      header.innerHTML = '<span class="method">' + method + '</span> ' + url + (statusLabel ? ' <span class="status ' + (isError ? 'err' : 'ok') + '">' + statusLabel + '</span>' : ' <span class="status">…</span>');
+      box.className = 'response-box ' + (isError ? 'error' : 'success');
+      outEl.textContent = bodyText || '';
+      outEl.classList.remove('placeholder');
+      box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    function setResponseLoading(panel, method, url) {
+      const box = $('response-box-' + panel), header = $('response-header-' + panel), outEl = $('out-' + panel);
+      header.innerHTML = '<span class="method">' + method + '</span> ' + url + ' <span class="status">Loading…</span>';
+      box.className = 'response-box loading';
+      outEl.textContent = 'Sending request…';
+      outEl.classList.remove('placeholder');
+      box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    function out(panel, text, isError = false, meta = null) {
+      const box = $('response-box-' + panel), header = $('response-header-' + panel), outEl = $('out-' + panel);
+      outEl.textContent = text || (text === '' ? '' : 'No content');
+      outEl.classList.remove('placeholder');
+      box.className = 'response-box ' + (isError ? 'error' : 'success');
+      if (meta && meta.method != null) {
+        const statusLabel = (meta.status !== undefined ? meta.status + ' ' + (STATUS_LABELS[meta.status] || '') : '').trim();
+        header.innerHTML = '<span class="method">' + meta.method + '</span> ' + (meta.url || '') + (statusLabel ? ' <span class="status ' + (isError ? 'err' : 'ok') + '">' + statusLabel + '</span>' : '');
+      } else {
+        header.textContent = isError ? 'Validation' : 'Response';
+      }
+    }
+    async function api(method, url, body = null) {
+      const opt = { method, headers: { 'Content-Type': 'application/json' } };
+      if (body != null) opt.body = typeof body === 'string' ? body : JSON.stringify(body);
+      const r = await fetch(url, opt);
+      const text = await r.text();
+      let data;
+      try { data = text ? JSON.parse(text) : null; } catch (_) { data = text; }
+      return { ok: r.ok, status: r.status, data, text, method, url };
+    }
+    async function request(panel, method, url, body, format) {
+      setResponseLoading(panel, method, url);
+      try {
+        const res = await api(method, url, body);
+        let bodyText;
+        if (format) bodyText = format(res);
+        else if (res.ok) bodyText = JSON.stringify(res.data, null, 2);
+        else bodyText = (res.data && res.data.error) ? `[${res.status}] ${res.data.error}` : `[${res.status}] ${res.text || res.data ? JSON.stringify(res.data) : 'Bad Request'}`;
+        setResponse(panel, method, url, res.status, bodyText, !res.ok);
+      } catch (e) {
+        setResponse(panel, method, url, null, e.message || String(e), true);
+      }
+    }
+
+    // --- USERS ---
+    async function usersGetAll() {
+      await request('users', 'GET', base().user + '/api/users');
+    }
+    async function usersGetById() {
+      const id = $('userById').value.trim();
+      if (!id) { out('users', 'Enter ID', true); return; }
+      await request('users', 'GET', base().user + '/api/users/' + encodeURIComponent(id));
+    }
+    async function usersGetByUsername() {
+      const u = $('userByUsername').value.trim();
+      if (!u) { out('users', 'Enter username', true); return; }
+      await request('users', 'GET', base().user + '/api/users/username/' + encodeURIComponent(u));
+    }
+    async function usersGetByEmail() {
+      const e = $('userByEmail').value.trim();
+      if (!e) { out('users', 'Enter email', true); return; }
+      await request('users', 'GET', base().user + '/api/users/email/' + encodeURIComponent(e));
+    }
+    async function usersSearch() {
+      const q = $('userSearchQ').value.trim();
+      await request('users', 'GET', base().user + '/api/users/search?q=' + encodeURIComponent(q || ''));
+    }
+    async function usersExistsUsername() {
+      const u = $('userExistsUsername').value.trim();
+      await request('users', 'GET', base().user + '/api/users/exists/username/' + encodeURIComponent(u || ''), null, r => r.ok ? String(r.data) : `[${r.status}] ${r.text}`);
+    }
+    async function usersExistsEmail() {
+      const e = $('userExistsEmail').value.trim();
+      await request('users', 'GET', base().user + '/api/users/exists/email/' + encodeURIComponent(e || ''), null, r => r.ok ? String(r.data) : `[${r.status}] ${r.text}`);
+    }
+    async function usersCreate() {
+      const username = $('userCreateUsername').value.trim();
+      const email = $('userCreateEmail').value.trim();
+      const password = $('userCreatePassword').value;
+      if (!username || username.length < 3 || username.length > 50) {
+        out('users', 'Username is required and must be 3–50 characters.', true); return;
+      }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        out('users', 'A valid email is required.', true); return;
+      }
+      if (!password || password.length < 6) {
+        out('users', 'Password is required and must be at least 6 characters.', true); return;
+      }
+      const body = { username, email, password, firstName: $('userCreateFirstName').value.trim() || null, lastName: $('userCreateLastName').value.trim() || null };
+      await request('users', 'POST', base().user + '/api/users', body);
+    }
+    async function usersUpdate() {
+      const id = $('userUpdateId').value.trim();
+      if (!id) { out('users', 'Enter user ID', true); return; }
+      const body = { username: $('userUpdateUsername').value.trim(), email: $('userUpdateEmail').value.trim(), password: $('userUpdatePassword').value || undefined, firstName: $('userUpdateFirstName').value.trim() || null, lastName: $('userUpdateLastName').value.trim() || null };
+      if (body.password === '') delete body.password;
+      await request('users', 'PUT', base().user + '/api/users/' + id, body);
+    }
+    async function usersDelete() {
+      const id = $('userDeleteId').value.trim();
+      if (!id) { out('users', 'Enter user ID', true); return; }
+      await request('users', 'DELETE', base().user + '/api/users/' + id, null, r => r.ok ? '204 No Content' : `[${r.status}] ${r.text}`);
+    }
+
+    // --- PRODUCTS ---
+    async function productsGetAll() {
+      const page = $('prodPage').value || 0, size = $('prodSize').value || 10, sortBy = $('prodSortBy').value || 'id', sortDir = $('prodSortDir').value || 'ASC';
+      await request('products', 'GET', base().product + '/api/products?page=' + page + '&size=' + size + '&sortBy=' + encodeURIComponent(sortBy) + '&sortDir=' + sortDir);
+    }
+    async function productsGetById() {
+      const id = $('prodById').value.trim();
+      if (!id) { out('products', 'Enter ID', true); return; }
+      await request('products', 'GET', base().product + '/api/products/' + id);
+    }
+    async function productsGetBySku() {
+      const sku = $('prodBySku').value.trim();
+      if (!sku) { out('products', 'Enter SKU', true); return; }
+      await request('products', 'GET', base().product + '/api/products/sku/' + encodeURIComponent(sku));
+    }
+    async function productsByCategory() {
+      const cat = $('prodCategory').value.trim();
+      await request('products', 'GET', base().product + '/api/products/category/' + encodeURIComponent(cat || ''));
+    }
+    async function productsSearch() {
+      const q = $('prodSearchQ').value.trim();
+      await request('products', 'GET', base().product + '/api/products/search?q=' + encodeURIComponent(q || ''));
+    }
+    async function productsAvailable() {
+      await request('products', 'GET', base().product + '/api/products/available');
+    }
+    async function productsCreate() {
+      const body = { name: $('prodCreateName').value.trim(), description: $('prodCreateDesc').value.trim() || null, price: parseFloat($('prodCreatePrice').value) || 0, quantity: parseInt($('prodCreateQty').value, 10) || 0, category: $('prodCreateCategory').value.trim() || null, sku: $('prodCreateSku').value.trim() };
+      await request('products', 'POST', base().product + '/api/products', body);
+    }
+    async function productsUpdate() {
+      const id = $('prodUpdateId').value.trim();
+      if (!id) { out('products', 'Enter ID', true); return; }
+      const body = { name: $('prodUpdateName').value.trim(), description: $('prodUpdateDesc').value.trim() || null, price: parseFloat($('prodUpdatePrice').value) || 0, quantity: parseInt($('prodUpdateQty').value, 10) || 0, category: $('prodUpdateCategory').value.trim() || null, sku: $('prodUpdateSku').value.trim() };
+      await request('products', 'PUT', base().product + '/api/products/' + id, body);
+    }
+    async function productsPatchQty() {
+      const id = $('prodPatchId').value.trim(), qty = $('prodPatchQty').value.trim();
+      if (!id || qty === '') { out('products', 'Enter ID and quantity', true); return; }
+      await request('products', 'PATCH', base().product + '/api/products/' + id + '/quantity?quantity=' + encodeURIComponent(qty));
+    }
+    async function productsDelete() {
+      const id = $('prodDeleteId').value.trim();
+      if (!id) { out('products', 'Enter ID', true); return; }
+      await request('products', 'DELETE', base().product + '/api/products/' + id, null, r => r.ok ? '204 No Content' : `[${r.status}] ${r.text}`);
+    }
+
+    // --- ORDERS ---
+    let orderLineItems = [];
+    function addOrderLineItem() {
+      const div = document.createElement('div');
+      div.className = 'line-item';
+      div.innerHTML = '<input type="number" placeholder="Product ID" class="line-productId" style="width:90px" /><input type="number" placeholder="Qty" class="line-quantity" value="1" style="width:60px" /><button type="button" class="secondary" onclick="this.parentElement.remove()">Remove</button>';
+      $('orderLineItems').appendChild(div);
+    }
+    function getOrderLineItems() {
+      const items = [];
+      $('orderLineItems').querySelectorAll('.line-item').forEach(row => {
+        const pid = row.querySelector('.line-productId').value.trim();
+        const qty = row.querySelector('.line-quantity').value.trim();
+        if (pid && qty) items.push({ productId: parseInt(pid, 10), quantity: parseInt(qty, 10) });
+      });
+      return items;
+    }
+    async function ordersGetAll() {
+      await request('orders', 'GET', base().order + '/api/orders');
+    }
+    async function ordersGetById() {
+      const id = $('orderById').value.trim();
+      if (!id) { out('orders', 'Enter ID', true); return; }
+      await request('orders', 'GET', base().order + '/api/orders/' + id);
+    }
+    async function ordersGetByNumber() {
+      const num = $('orderByNumber').value.trim();
+      if (!num) { out('orders', 'Enter order number', true); return; }
+      await request('orders', 'GET', base().order + '/api/orders/order-number/' + encodeURIComponent(num));
+    }
+    async function ordersGetByUser() {
+      const uid = $('orderUserId').value.trim();
+      if (!uid) { out('orders', 'Enter user ID', true); return; }
+      await request('orders', 'GET', base().order + '/api/orders/user/' + uid);
+    }
+    async function ordersGetByStatus() {
+      const status = $('orderStatus').value;
+      await request('orders', 'GET', base().order + '/api/orders/status/' + status);
+    }
+    async function ordersCreate() {
+      const body = { userId: parseInt($('orderCreateUserId').value, 10), orderNumber: $('orderCreateNumber').value.trim(), totalAmount: parseFloat($('orderCreateTotal').value), status: $('orderCreateStatus').value, shippingAddress: $('orderCreateAddress').value.trim() || null, lineItems: getOrderLineItems() };
+      await request('orders', 'POST', base().order + '/api/orders', body);
+    }
+    async function ordersUpdate() {
+      const id = $('orderUpdateId').value.trim();
+      if (!id) { out('orders', 'Enter order ID', true); return; }
+      const body = { userId: parseInt($('orderUpdateUserId').value, 10), orderNumber: $('orderUpdateNumber').value.trim(), totalAmount: parseFloat($('orderUpdateTotal').value), status: $('orderUpdateStatus').value, shippingAddress: $('orderUpdateAddress').value.trim() || null, lineItems: getOrderLineItems() };
+      await request('orders', 'PUT', base().order + '/api/orders/' + id, body);
+    }
+    async function ordersPatchStatus() {
+      const id = $('orderPatchId').value.trim(), status = $('orderPatchStatus').value;
+      if (!id) { out('orders', 'Enter order ID', true); return; }
+      await request('orders', 'PATCH', base().order + '/api/orders/' + id + '/status', JSON.stringify(status));
+    }
+    async function ordersDelete() {
+      const id = $('orderDeleteId').value.trim();
+      if (!id) { out('orders', 'Enter order ID', true); return; }
+      await request('orders', 'DELETE', base().order + '/api/orders/' + id, null, r => r.ok ? '204 No Content' : `[${r.status}] ${r.text}`);
+    }
+
+  </script>
+</body>
+</html>

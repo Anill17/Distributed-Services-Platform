@@ -4,13 +4,16 @@ server:
 spring:
   application:
     name: user-service
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
 
-  # Database Configuration
+  # Database Configuration (password must match your local PostgreSQL)
   datasource:
-    url: jdbc:postgresql://localhost:5432/userdb  
+    url: jdbc:postgresql://localhost:5432/userdb
     driver-class-name: org.postgresql.Driver
     username: postgres
-    password: postgres
+    password: 1903
 
   jpa:
     hibernate:
@@ -38,12 +41,12 @@ spring:
     bootstrap-servers: localhost:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serialization.JsonSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
       acks: all
     consumer:
       group-id: user-service-group
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serialization.JsonDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       auto-offset-reset: earliest
       properties:
         spring.json.trusted.packages: "*"

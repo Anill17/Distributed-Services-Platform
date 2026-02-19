@@ -15,21 +15,30 @@ import com.distributedservices.userservice.model.User;
 import com.distributedservices.userservice.repository.UserElasticsearchRepository;
 import com.distributedservices.userservice.repository.UserRepository;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 
-@RequiredArgsConstructor
 @Slf4j
 @Service
 public class UserServiceImpl implements UserService{
     private static final String USER_ID_CACHE_PREFIX = "user:id:";
     private static final String USER_USERNAME_CACHE_PREFIX = "user:username:";
     private static final String USER_EMAIL_CACHE_PREFIX = "user:email:";
-    
+
     private final UserRepository userRepository;
     private final UserElasticsearchRepository elasticsearchRepository;
     private final PasswordEncoder passwordEncoder;
     private final RedisTemplate<String, Object> redisTemplate;
+
+    public UserServiceImpl(UserRepository userRepository,
+                           UserElasticsearchRepository elasticsearchRepository,
+                           PasswordEncoder passwordEncoder,
+                           @Autowired(required = false) RedisTemplate<String, Object> redisTemplate) {
+        this.userRepository = userRepository;
+        this.elasticsearchRepository = elasticsearchRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.redisTemplate = redisTemplate;
+    }
     
     @Override
     @Transactional
@@ -89,14 +98,16 @@ public class UserServiceImpl implements UserService{
     public UserResponse getUserById(Long id) {
         log.debug("Fetching user by id: {}", id);
         
-        // Try to get from cache first
-        String cacheKey = USER_ID_CACHE_PREFIX + id;
-        User cachedUser = (User) redisTemplate.opsForValue().get(cacheKey);
-        if (cachedUser != null) {
-            log.debug("User found in cache: {}", id);
-            return mapToResponse(cachedUser);
+        // Try to get from cache first (if Redis available)
+        if (redisTemplate != null) {
+            String cacheKey = USER_ID_CACHE_PREFIX + id;
+            User cachedUser = (User) redisTemplate.opsForValue().get(cacheKey);
+            if (cachedUser != null) {
+                log.debug("User found in cache: {}", id);
+                return mapToResponse(cachedUser);
+            }
         }
-        
+
         // If not in cache, fetch from database
         User user = userRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
@@ -110,14 +121,16 @@ public class UserServiceImpl implements UserService{
     @Override
     public UserResponse getUserByUsername(String username) {
         log.debug("Fetching user by username: {}", username);
-        
-        String cacheKey = USER_USERNAME_CACHE_PREFIX + username;
-        User cachedUser = (User) redisTemplate.opsForValue().get(cacheKey);
-        if (cachedUser != null) {
-            log.debug("User found in cache: {}", username);
-            return mapToResponse(cachedUser);
+
+        if (redisTemplate != null) {
+            String cacheKey = USER_USERNAME_CACHE_PREFIX + username;
+            User cachedUser = (User) redisTemplate.opsForValue().get(cacheKey);
+            if (cachedUser != null) {
+                log.debug("User found in cache: {}", username);
+                return mapToResponse(cachedUser);
+            }
         }
-        
+
         // If not in cache, fetch from database
         User user = userRepository.findByUsername(username)
             .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
@@ -131,12 +144,14 @@ public class UserServiceImpl implements UserService{
     @Override
     public UserResponse getUserByEmail(String email) {
         log.debug("Fetching user by email: {}", email);
-        
-        String cacheKey = USER_EMAIL_CACHE_PREFIX + email;
-        User cachedUser = (User) redisTemplate.opsForValue().get(cacheKey);
-        if (cachedUser != null) {
-            log.debug("User found in cache: {}", email);
-            return mapToResponse(cachedUser);
+
+        if (redisTemplate != null) {
+            String cacheKey = USER_EMAIL_CACHE_PREFIX + email;
+            User cachedUser = (User) redisTemplate.opsForValue().get(cacheKey);
+            if (cachedUser != null) {
+                log.debug("User found in cache: {}", email);
+                return mapToResponse(cachedUser);
+            }
         }
 
         // If not in cache, fetch from database
@@ -281,13 +296,14 @@ public class UserServiceImpl implements UserService{
         return userRepository.existsByEmail(email);
     }
     
-    // Helper methods for cache operations
+    // Helper methods for cache operations (no-op when Redis is not available)
     private void cacheUser(User user) {
+        if (redisTemplate == null) return;
         try {
             String idKey = USER_ID_CACHE_PREFIX + user.getId();
             String usernameKey = USER_USERNAME_CACHE_PREFIX + user.getUsername();
             String emailKey = USER_EMAIL_CACHE_PREFIX + user.getEmail();
-            
+
             redisTemplate.opsForValue().set(idKey, user);
             redisTemplate.opsForValue().set(usernameKey, user);
             redisTemplate.opsForValue().set(emailKey, user);
@@ -296,13 +312,14 @@ public class UserServiceImpl implements UserService{
             log.warn("Failed to cache user: {}", e.getMessage());
         }
     }
-    
+
     private void evictUserCache(User user) {
+        if (redisTemplate == null) return;
         try {
             String idKey = USER_ID_CACHE_PREFIX + user.getId();
             String usernameKey = USER_USERNAME_CACHE_PREFIX + user.getUsername();
             String emailKey = USER_EMAIL_CACHE_PREFIX + user.getEmail();
-            
+
             redisTemplate.delete(idKey);
             redisTemplate.delete(usernameKey);
             redisTemplate.delete(emailKey);
